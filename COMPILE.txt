@@ -1,0 +1,1 @@
+pyinstaller --onefile --icon=icon.ico --add-data "end.mp3;." --add-data "error.mp3;." --add-data "listen_chime.mp3;." vlc_assistant.py

@@ -1,0 +1,6 @@
+venv
+build
+*.log
+*.spec
+dist/*.log
+dist/video_directory.txt

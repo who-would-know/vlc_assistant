@@ -1,0 +1,17 @@
+- Create file name: video_directory.txt
+- Update file: video_directory.txt with diretory to your videos
+- Create file name: vlc_path.txt
+- Update file with full path to "vlc.exe" default on most systems "C:\Program Files\VideoLAN\VLC\vlc.exe"
+
+- Double click to run "vlc_assistant.exe"
+
+- Talk to vlc_assistant by saying "Ivy", wait for chime, and ask "play <fishing or building or name of video>" 
+- Other commands
+    - "pause"
+    - "close"
+    
+- To view logs in Windows Powershell:
+    cd <directory vlc_assistant.exe>
+    Get-Content .\vlc_assistant.log -Wait
+
+- Have fun!
