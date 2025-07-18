@@ -18,9 +18,24 @@ import sys
 import subprocess
 import pyautogui
 
+#Logging class
+class Logger:
+    def __init__(self, filename):
+        self.terminal = sys.__stdout__  # Save original stdout
+        self.log = open(filename, 'a', buffering=1, encoding='utf-8')
+
+    def write(self, message):
+        self.terminal.write(message)  # Print to screen
+        self.log.write(message)       # Write to file
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
+
 # Redirect all output to log file
 logfile_path = "vlc_assistant.log"
-sys.stdout = open(logfile_path, 'a', buffering=1, encoding='utf-8')
+# sys.stdout = open(logfile_path, 'a', buffering=1, encoding='utf-8')
+sys.stdout = Logger(logfile_path)
 sys.stderr = sys.stdout
 
 #Set language
@@ -42,8 +57,8 @@ engine.setProperty('voice', voice.id)
 
 #Greeting
 greetings = [
-             "Hello, how can I help you today?",
-             "Hi, how can I help?",
+             "Hi Dr. Max, how can I help you?",
+             "Hi Dr. Max, how can I help?",
              ]
 
 messages = []
@@ -82,7 +97,8 @@ def resource_path(relative_path):
 
 #Listening Chime
 listen_chime = resource_path("listen_chime.mp3")
-end_chime = resource_path("end.mp3")
+end_chime = resource_path("end.mp3") 
+goodbye = resource_path("mothershort.mp3")
 
 #Open directory file
 filename = "video_directory.txt"
@@ -94,75 +110,6 @@ try:
 except Exception as e:
     print(f"Something went wrong: {e}")
     sys.exit(f"Error occured reading file {e}, existing.")
-
-
-
-
-# #player pause
-# def pause_if_playing(player):
-#     if player.is_playing():
-#         player.pause()
-#         print("Paused playback.")
-#     else:
-#         print("Playback was not active.")
-
-# #player resume
-# def play_if_paused(player):
-#     state = player.get_state()
-#     # vlc.State.Paused means paused
-#     if state == vlc.State.Paused:
-#         player.play()
-#         print("Resumed playing.")
-#     else:
-#         print(f"Player state is {state}, not paused.")
-
-# def close_vlc_player(player):
-#     """
-#     Stops playback and closes the VLC player if it's active.
-    
-#     Args:
-#         player: vlc.MediaPlayer() object
-#     """
-#     if player is not None:
-#         state = player.get_state()
-#         if state in [vlc.State.Playing, vlc.State.Paused]:
-#             player.stop()
-#             print("VLC player stopped.")
-#         else:
-#             print(f"VLC player is in state: {state}. No action needed.")
-#     else:
-#         print("VLC player is not initialized.")
-
-# import vlc
-
-# def close_player_if_ended(player):
-#     """
-#     If the VLC player's current media has finished (State.Ended),
-#     stop playback and release the player resources, and speak a message.
-#     """
-#     if player is None:
-#         return
-
-#     state = player.get_state()
-#     if state == vlc.State.Ended:
-#         print("VLC player closed (media ended).")
-
-#         # Speak the message
-#         message = "Closing player as video has ended."
-#         if tts_engine == 'pyttsx3':
-#             engine.say(message)
-#             engine.runAndWait()
-#         elif tts_engine == 'gtts':
-#             tts = gTTS(text=message, lang=language)
-#             mp3_fp = io.BytesIO()
-#             tts.write_to_fp(mp3_fp)
-#             mp3_fp.seek(0)
-#             audio = AudioSegment.from_file(mp3_fp, format="mp3")
-#             play(audio)
-
-#         # Then stop and release VLC
-#         player.stop()
-#         # player.release()
 
 
 
@@ -178,6 +125,8 @@ def listen_for_wake_word(source):
 
     while True:
         # close_player_if_ended(player)
+        # For loud fan noise
+        r.adjust_for_ambient_noise(source, duration=1)
         audio = r.listen(source) #, timeout=10, phrase_time_limit=30)
         # DEBUG: show length of recording in seconds
         # duration = len(audio.frame_data) / audio.sample_rate / 2  # divide by 2 for 16-bit samples
@@ -223,40 +172,6 @@ def listen_for_wake_word(source):
             # Optionally break or continue depending on severity
             break
 
-# def listen_full_utterance(recognizer, source, timeout=10):
-#     print("Listening (full utterance)...")
-#     return recognizer.listen(source, timeout=timeout)
-
-# def listen_until_silence(recognizer, source, max_duration=10, silence_threshold=1.0):
-#     print("Listening (custom)...")
-#     audio_segments = []
-#     start_time = time.time()
-#     last_sound_time = time.time()
-
-#     while True:
-#         try:
-#             # Listen in short chunks
-#             chunk = recognizer.listen(source, timeout=1, phrase_time_limit=3)
-#             audio_segments.append(chunk.get_raw_data())
-#             last_sound_time = time.time()
-#         except sr.WaitTimeoutError:
-#             # No input detected in 1 second
-#             if time.time() - last_sound_time > silence_threshold:
-#                 break
-#         except Exception as e:
-#             print(f"[DEBUG] Listen chunk error: {e}")
-#             break
-
-#         if time.time() - start_time > max_duration:
-#             print("[DEBUG] Max recording time reached.")
-#             break
-
-#     if not audio_segments:
-#         return None
-
-#     combined_audio = b''.join(audio_segments)
-#     return sr.AudioData(combined_audio, source.SAMPLE_RATE, source.SAMPLE_WIDTH)
-
 # Listen for input and respond with OpenAI API
 def listen_and_respond(source, messages):
     global vlc_process
@@ -294,7 +209,8 @@ def listen_and_respond(source, messages):
                         matched_filename = find_one_video_filename_with_string(video_title, directory_path)
                         if matched_filename:
                             print("Found:", matched_filename)
-                            response_text = "Found file" + matched_filename + "playing..."
+                            # response_text = "Found file" + matched_filename + "playing..."
+                            response_text = "playing..."
                             full_file_path = os.path.join(directory_path, matched_filename)
                             vlc_process = subprocess.Popen([vlc_path,"--fullscreen",full_file_path])
                             # play_video = instance.media_new(directory_path + "/" + matched_filename)
@@ -330,7 +246,14 @@ def listen_and_respond(source, messages):
                             response_text = "closing video"
                         else:
                             response_text = "No video is currently playing"
-
+                        
+                        #Go back to listening for wake word
+                        playsound(end_chime)
+                        listen_for_wake_word(source)
+                    elif "goodbye" in lower_text:
+                        # playsound(end_chime)
+                        playsound(goodbye)
+                        sys.exit(0)
                     # elif "current weather" in lower_text:
                     #     response_text = get_current_weather_open_meteo()
 
@@ -403,14 +326,15 @@ def listen_and_respond(source, messages):
             except sr.UnknownValueError:
                 # playsound("error.mp3")
                 print("Silence found, shutting up, listening...")
-                playsound(end_chime)
+                # playsound(end_chime)
                 # os.remove('response.mp3')
                 #clear background noise
                 # play_if_paused(player)
-                time.sleep(0.5)
+                time.sleep(0.2)
                 r.adjust_for_ambient_noise(source, duration=1)#0.5)
-                listen_for_wake_word(source)
-                break
+                continue
+                # listen_for_wake_word(source)
+                # break
 
             except sr.RequestError as e:
                 print(f"Could not request results; {e}")
